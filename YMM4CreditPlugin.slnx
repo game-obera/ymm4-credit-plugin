@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/YMM4CreditPlugin.Core/YMM4CreditPlugin.Core.csproj" />
+    <Project Path="src/YMM4CreditPlugin/YMM4CreditPlugin.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/YMM4CreditPlugin.Core.Tests/YMM4CreditPlugin.Core.Tests.csproj" />
+  </Folder>
+</Solution>

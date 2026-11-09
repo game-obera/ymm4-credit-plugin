@@ -1,0 +1,121 @@
+<UserControl x:Class="YMM4CreditPlugin.CreditToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:YMM4CreditPlugin"
+             MinWidth="600" MinHeight="500">
+    <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="GridStyles.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <!-- 複数行クレジット用: 表示は折り返し、編集中は Enter で改行(確定は Tab かほかのセルをクリック) -->
+        <Style x:Key="MultiLineText" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="MultiLineEdit" TargetType="TextBox">
+            <Setter Property="AcceptsReturn" Value="True" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <local:MergedKindConverter x:Key="MergedKindConverter" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <DockPanel Margin="8">
+        <!-- クレジット出力(抽出より上) -->
+        <GroupBox DockPanel.Dock="Top" Header="クレジット出力(ymmp と同じフォルダに クレジット.txt)">
+            <StackPanel Orientation="Horizontal" Margin="4">
+                <Button Content="現在のプロジェクトから出力" Command="{Binding OutputCurrentCommand}" Padding="8,4" Margin="0,0,8,0" />
+                <Button Content="ymmp を選んで出力" Command="{Binding OutputFileCommand}" Padding="8,4" />
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox DockPanel.Dock="Top" Header="素材の抽出" Margin="0,4,0,0">
+            <StackPanel Orientation="Horizontal" Margin="4">
+                <Button Content="現在のプロジェクトから抽出" Command="{Binding ExtractCurrentCommand}" Padding="8,4" Margin="0,0,8,0" />
+                <Button Content="ymmp から抽出" Command="{Binding ExtractFileCommand}" Padding="8,4" />
+            </StackPanel>
+        </GroupBox>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+
+        <!-- 出典ごとのまとめ設定 -->
+        <GroupBox DockPanel.Dock="Bottom" Header="出典一覧(まとめる = まとめ用クレジットを出力先の種類に 1 行だけ出力 / 掲載不要 = この出典の素材を出力しない)" Height="160" Margin="0,4,0,0">
+            <DataGrid x:Name="SourceGrid" ItemsSource="{Binding Sources}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" Margin="4">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="出典" Binding="{Binding Name}" IsReadOnly="True" Width="160" />
+                    <!-- DataGridCheckBoxColumn は 2 回クリックが必要なため、テンプレートで 1 回で切り替わるようにする -->
+                    <DataGridTemplateColumn Header="まとめる" Width="70">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Merge, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!-- まとめる出典が複数の種類にまたがるとき、まとめ行を出す見出し -->
+                    <DataGridTemplateColumn Header="出力先" Width="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{x:Static local:KindOption.WithAuto}"
+                                          SelectedItem="{Binding MergedKind, Converter={StaticResource MergedKindConverter}, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMemberPath="Name" IsEnabled="{Binding Merge}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="掲載不要" Width="70">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding NoCredit, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="まとめ用クレジット" Binding="{Binding MergedCredit}" Width="*"
+                                        ElementStyle="{StaticResource MultiLineText}" EditingElementStyle="{StaticResource MultiLineEdit}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
+        <!-- 登録済み素材 -->
+        <GroupBox Header="登録済み素材" Margin="0,4,0,0">
+            <DockPanel Margin="4">
+                <WrapPanel DockPanel.Dock="Bottom" Margin="0,4,0,0">
+                    <TextBlock Text="出典" VerticalAlignment="Center" Margin="0,0,4,0" />
+                    <TextBox Text="{Binding BulkSource}" Width="120" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock Text="クレジット" VerticalAlignment="Center" Margin="0,0,4,0" />
+                    <TextBox Text="{Binding BulkCredit}" Width="200" Margin="0,0,8,0" AcceptsReturn="True" TextWrapping="Wrap" MaxHeight="80" VerticalScrollBarVisibility="Auto" />
+                    <TextBlock Text="種類" VerticalAlignment="Center" Margin="0,0,4,0" />
+                    <ComboBox ItemsSource="{Binding BulkKindOptions}" SelectedItem="{Binding BulkKind}" DisplayMemberPath="Name" Width="100" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <Button Content="選択行に適用" Command="{Binding ApplyBulkCommand}" Padding="8,2" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <Button Content="選択行を削除" Command="{Binding DeleteSelectedCommand}" Padding="8,2" VerticalAlignment="Center" />
+                </WrapPanel>
+                <DataGrid x:Name="MaterialGrid" ItemsSource="{Binding Materials}" AutoGenerateColumns="False"
+                          CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended" SelectionUnit="FullRow">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="素材名" Binding="{Binding Name}" Width="140" />
+                        <DataGridTextColumn Header="出典" Binding="{Binding Source}" Width="120" />
+                        <DataGridTextColumn Header="クレジット" Binding="{Binding Credit}" Width="*"
+                                            ElementStyle="{StaticResource MultiLineText}" EditingElementStyle="{StaticResource MultiLineEdit}" />
+                        <!-- チェックした素材はクレジット.txt に出さない(該当なしにも出さない) -->
+                        <DataGridTemplateColumn Header="掲載不要" Width="70" SortMemberPath="NoCredit">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding NoCredit, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <!-- DataGridComboBoxColumn は「セル選択→クリック」でないと開かないため、常に操作できるプルダウンを置く -->
+                        <!-- テンプレート列は並べ替えキーが自動設定されないため SortMemberPath を明示する(enum の宣言順 = 出力順で並ぶ) -->
+                        <DataGridTemplateColumn Header="種類" Width="90" SortMemberPath="Kind">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{x:Static local:KindOption.All}"
+                                              SelectedValue="{Binding Kind, UpdateSourceTrigger=PropertyChanged}"
+                                              SelectedValuePath="Kind" DisplayMemberPath="Name" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="ファイル・キー" Binding="{Binding Key}" IsReadOnly="True" Width="200" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </GroupBox>
+    </DockPanel>
+</UserControl>

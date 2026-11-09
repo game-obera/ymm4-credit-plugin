@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- ビルド後の配置先。既定は YMM4 のプラグインフォルダ -->
+    <PluginDeployDir Condition="'$(PluginDeployDir)' == '' and '$(YMM4_PATH)' != ''">$(YMM4_PATH)\user\plugin\YMM4CreditPlugin</PluginDeployDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="YukkuriMovieMaker.Plugin">
+      <HintPath>$(YMM4_PATH)\YukkuriMovieMaker.Plugin.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\YMM4CreditPlugin.Core\YMM4CreditPlugin.Core.csproj" />
+  </ItemGroup>
+
+  <Target Name="CheckYmm4Path" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'$(YMM4_PATH)' == ''" Text="環境変数 YMM4_PATH に YMM4 のフォルダを設定してください" />
+  </Target>
+
+  <!-- Release ビルドのときだけ配置する(テストのビルドで YMM4 起動中の DLL を上書きしようとしないように)。
+       配布用パッケージを作るときは -p:SkipPluginDeploy=true で配置しない -->
+  <Target Name="DeployPlugin" AfterTargets="Build" Condition="'$(PluginDeployDir)' != '' and '$(Configuration)' == 'Release' and '$(SkipPluginDeploy)' != 'true'">
+    <Copy SourceFiles="$(TargetDir)YMM4CreditPlugin.dll;$(TargetDir)YMM4CreditPlugin.Core.dll" DestinationFolder="$(PluginDeployDir)" />
+    <Message Importance="high" Text="プラグインを配置しました: $(PluginDeployDir)" />
+  </Target>
+
+</Project>
