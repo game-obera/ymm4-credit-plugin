@@ -36,6 +36,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# 出力を UTF-8 にする(既定のコンソールの文字コードのままだと、出力を受け取る側で日本語が文字化けする)
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 
 $pluginName = 'YMM4CreditPlugin'
 $tag = "v$Version"
